@@ -661,3 +661,154 @@ void BinaryFileHandler::navigatePages(size_t items_per_page)
     } while (user_input != 'q');
 }
 
+void Tree::inOrderTraversal_2(std::ofstream &output_file)
+{
+    inOrderTraversalRec_2(root, output_file);
+}
+
+void Tree::inOrderTraversalRec_2(Node *node, std::ofstream &output_file)
+{
+    if (node)
+    {
+        inOrderTraversalRec_2(node->left, output_file);
+
+        std::stringstream ss;
+        ss << node->data;
+        std::string serialized = ss.str();
+        size_t size = serialized.size();
+        output_file.write(reinterpret_cast<const char *>(&size), sizeof(size));
+        output_file.write(serialized.c_str(), size);
+
+        inOrderTraversalRec_2(node->right, output_file);
+    }
+}
+
+void ExternalSort::sortBinaryFile(const std::string &file_name, size_t block_size)
+{
+    std::ifstream file(file_name, std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cerr << "Ошибка открытия файла для чтения.\n";
+        return;
+    }
+
+    size_t block_number = 0;
+    while (true)
+    {
+        Tree tree;
+        size_t size;
+        size_t count = 0;
+
+        while (count < block_size && file.read(reinterpret_cast<char *>(&size), sizeof(size)))
+        {
+            std::string serialized(size, '\0');
+            file.read(&serialized[0], size);
+            std::istringstream ss(serialized);
+            Advertisement ad;
+            ad.deserialize(ss);
+            tree.insert(ad);
+            count++;
+        }
+        if (count == 0)
+            break;
+
+        std::ofstream temp_file("temp_" + std::to_string(block_number++) + ".bin", std::ios::binary);
+        tree.inOrderTraversal_2(temp_file);
+        temp_file.close();
+    }
+
+    file.close();
+
+    mergeSortedBlocks(block_number);
+}
+
+void ExternalSort::mergeSortedBlocks(size_t block_count)
+{
+
+    std::vector<std::ifstream> temp_files;
+    std::vector<Advertisement> buffer(block_count);
+
+
+    for (size_t i = 0; i < block_count; ++i)
+    {
+        temp_files.emplace_back("temp_" + std::to_string(i) + ".bin", std::ios::binary);
+        if (!temp_files.back().is_open())
+        {
+            std::cerr << "Ошибка открытия временного файла " << i << "\n";
+            return;
+        }
+    }
+
+    for (size_t i = 0; i < block_count; ++i)
+    {
+        size_t size;
+        if (temp_files[i].read(reinterpret_cast<char *>(&size), sizeof(size)))
+        {
+            std::string serialized(size, '\0');
+            temp_files[i].read(&serialized[0], size);
+            std::istringstream ss(serialized);
+            Advertisement ad;
+            ad.deserialize(ss);
+            buffer[i] = ad;
+        }
+    }
+
+    std::ofstream output_file("sorted_" + std::to_string(block_count) + ".bin", std::ios::binary);
+    if (!output_file.is_open())
+    {
+        std::cerr << "Ошибка открытия выходного файла для записи.\n";
+        return;
+    }
+
+    auto comp = [](const Advertisement &a, const Advertisement &b)
+    {
+        return a.getDate() > b.getDate(); 
+    };
+    std::priority_queue<Advertisement, std::vector<Advertisement>, decltype(comp)> pq(comp);
+
+    for (size_t i = 0; i < block_count; ++i)
+    {
+        if (temp_files[i])
+        {
+            pq.push(buffer[i]);
+        }
+    }
+
+    while (!pq.empty())
+    {
+        Advertisement ad = pq.top();
+        pq.pop();
+
+        std::stringstream ss;
+        ss << ad;
+        std::string serialized = ss.str();
+        size_t size = serialized.size();
+        output_file.write(reinterpret_cast<const char *>(&size), sizeof(size));
+        output_file.write(serialized.c_str(), size);
+
+        for (size_t i = 0; i < block_count; ++i)
+        {
+            if (temp_files[i])
+            {
+                size_t size;
+                if (temp_files[i].read(reinterpret_cast<char *>(&size), sizeof(size)))
+                {
+                    std::string serialized(size, '\0');
+                    temp_files[i].read(&serialized[0], size);
+                    std::istringstream ss(serialized);
+                    Advertisement ad;
+                    ad.deserialize(ss);
+                    buffer[i] = ad;
+                    pq.push(buffer[i]);
+                }
+            }
+        }
+    }
+
+    output_file.close();
+
+    for (size_t i = 0; i < block_count; ++i)
+    {
+        std::remove(("temp_" + std::to_string(i) + ".bin").c_str());
+    }
+}

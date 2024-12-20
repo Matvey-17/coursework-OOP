@@ -90,6 +90,10 @@ public:
 
     void inOrderTraversal() const;
 
+    void inOrderTraversal_2(std::ofstream& output_file);
+
+    void inOrderTraversalRec_2(Node *node, std::ofstream &output_file);
+
     Node *getRoot() const;
 
     TreeIterator getIterator();
@@ -121,6 +125,14 @@ public:
     void displayPage(size_t page, size_t items_per_page);
 
     void navigatePages(size_t items_per_page);
+};
+
+class ExternalSort
+{
+public:
+    static void sortBinaryFile(const std::string &file_name, size_t block_size = 100);
+
+    static void mergeSortedBlocks(size_t block_count);
 };
 
 #endif

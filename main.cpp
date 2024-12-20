@@ -1,5 +1,18 @@
 #include "Advertisement.h"
 
+void SortFileTime()
+{
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    ExternalSort::sortBinaryFile("ads.dat");
+    BinaryFileHandler fileHandlerSort("sorted_1.bin");
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end_time - start_time;
+
+    std::cout << "Время выполнения операции:" << elapsed.count() << " секунд.\n";
+}
+
 void getIndexTime(BinaryFileHandler &fileHandler)
 {
     auto start = std::chrono::high_resolution_clock::now();
@@ -119,7 +132,8 @@ void menu()
         std::cout << "7. Обновить запись по индексу\n";
         std::cout << "8. Извлечь запись по индексу\n";
         std::cout << "9. Постраничный просмотр записей\n";
-        std::cout << "10. Выход из меню\n";
+        std::cout << "10. Сортировка записей в файле\n";
+        std::cout << "11. Выход из меню\n";
         std::cout << "Выберите действие: ";
         std::cin >> choice;
         std::cin.ignore();
@@ -212,6 +226,14 @@ void menu()
         }
         case 10:
         {
+            ExternalSort::sortBinaryFile("ads.dat");
+            BinaryFileHandler fileHandlerSort("sorted_1.bin");
+            std::cout << "Отсортированные объявления по дате в новом файле:\n";
+            fileHandlerSort.displayAllRecords();
+            break;
+        }
+        case 11:
+        {
             std::cout << "Выход...\n";
             break;
         }
@@ -221,7 +243,7 @@ void menu()
             break;
         }
         }
-    } while (choice != 10);
+    } while (choice != 11);
 }
 
 int main()
