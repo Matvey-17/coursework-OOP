@@ -4,10 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <vector>
-#include <iomanip>
 #include <sstream>
-#include <algorithm>
 #include <ctime>
 #include <stack>
 #include <regex>

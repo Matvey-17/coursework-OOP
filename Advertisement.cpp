@@ -1,14 +1,4 @@
 #include "Advertisement.h"
-// #include <iostream>
-// #include <fstream>
-// #include <string>
-// #include <vector>
-// #include <iomanip>
-// #include <sstream>
-// #include <algorithm>
-// #include <ctime>
-// #include <stack>
-// #include <regex>
 
 bool validateDate(const std::string &date)
 {
